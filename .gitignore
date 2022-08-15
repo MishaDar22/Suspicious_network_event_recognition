@@ -131,7 +131,3 @@ dmypy.json
 .idea/
 input/
 mlruns/
-
-/home/michail/.config/JetBrains/DataSpell2022.2/projects/workspace/.idea/vcs.xml
-/home/michail/.config/JetBrains/DataSpell2022.2/projects/workspace/.idea/workspace.iml
-/home/michail/.config/JetBrains/DataSpell2022.2/projects/workspace/.idea/modules.xml
