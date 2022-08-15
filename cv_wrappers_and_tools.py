@@ -356,7 +356,7 @@ def plot_roc_auc(results: tp.List[tp.Tuple[pd.Series, pd.Series, str]]) -> None:
         # the roc_curve function returns three data series: fpr, tpr and thresholds
         fpr, tpr, thresholds = roc_curve(true, pred)
         # Calculation of the area under the curve
-        roc_score = round(roc_auc_score(true, pred), 3)
+        roc_score = round(roc_auc_score(true, pred), 4)
         roc_score_list.append(roc_score)
         # Drawing the ROC curve
         ax.plot(fpr, tpr, lw=lw, label=f'{label}: {roc_score}')
