@@ -167,7 +167,7 @@ def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target:
     objective: reg:linear, reg:logistic, binary:logistic, multi:softmax lub inne Pełna lista dostępna https://xgboost.readthedocs.io/en/stable/parameter.html
     seed: random seed
     booster: silnik dla drzew gbtree (cart), dart (gbtree z dropoutem) lub gblinear
-    tree_method: ‘auto’, ‘exact’, ‘approx’, ‘hist’, ‘gpu_exact’, ‘gpu_hist’ zobacz http://xgboost.readthedocs.io/en/latest/parameter.html
+    tree_method: ‘auto’, ‘exact’, ‘approx’, ‘hist’, ‘gpu_exact’, ‘gpu_hist’: http://xgboost.readthedocs.io/en/latest/parameter.html
     grow_policy: depthwise, lossguide
     """
 
@@ -356,7 +356,7 @@ def plot_roc_auc(results: tp.List[tp.Tuple[pd.Series, pd.Series, str]]) -> None:
         # the roc_curve function returns three data series: fpr, tpr and thresholds
         fpr, tpr, thresholds = roc_curve(true, pred)
         # Calculation of the area under the curve
-        roc_score = round(roc_auc_score(true, pred), 3)
+        roc_score = round(roc_auc_score(true, pred), 4)
         roc_score_list.append(roc_score)
         # Drawing the ROC curve
         ax.plot(fpr, tpr, lw=lw, label=f'{label}: {roc_score}')
