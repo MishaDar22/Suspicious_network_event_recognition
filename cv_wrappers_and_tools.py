@@ -167,7 +167,7 @@ def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target:
     objective: reg:linear, reg:logistic, binary:logistic, multi:softmax lub inne Pełna lista dostępna https://xgboost.readthedocs.io/en/stable/parameter.html
     seed: random seed
     booster: silnik dla drzew gbtree (cart), dart (gbtree z dropoutem) lub gblinear
-    tree_method: ‘auto’, ‘exact’, ‘approx’, ‘hist’, ‘gpu_exact’, ‘gpu_hist’ zobacz http://xgboost.readthedocs.io/en/latest/parameter.html
+    tree_method: ‘auto’, ‘exact’, ‘approx’, ‘hist’, ‘gpu_exact’, ‘gpu_hist’: http://xgboost.readthedocs.io/en/latest/parameter.html
     grow_policy: depthwise, lossguide
     """
 

@@ -29,20 +29,4 @@ def run_experiment(exp_name: str, algorithm_name: str, params: dict, metrics: di
         # TRACK METRICS
         mlflow.log_metrics(metrics)
 
-# def run_experiment(exp_name: str, algorithm_name: str, params: dict, metrics: dict, features: tp.List[str],
-#                    template_for_run_name: str = "Top {} features") -> None:
-#
-#     mlflow.start_run(experiment_id=_eid(exp_name),
-#                           run_name=template_for_run_name.format(len(features)))
-#     tags = dict()
-#     tags["algorithm"] = algorithm_name
-#     mlflow.set_tags(tags)
-#
-#     # TRACK PARAMS
-#     mlflow.log_params(params)
-#
-#     # TRACK METRIC
-#     mlflow.log_metrics(metrics)
-#     mlflow.end_run()
-
 
