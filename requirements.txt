@@ -143,3 +143,7 @@ Werkzeug==2.2.2
 widgetsnbextension @ file:///tmp/build/80754af9/widgetsnbextension_1645009354667/work
 xgboost==1.5.1
 zipp==3.8.1
+
+numpy~=1.21.5
+matplotlib~=3.5.1
+scikit-learn~=1.1.1
