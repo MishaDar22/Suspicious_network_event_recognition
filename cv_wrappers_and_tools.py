@@ -89,8 +89,10 @@ def cv_random_forest(train_df: pd.DataFrame, target: str, features: list, n_fold
     # Using mlflow for tracking results
     if mlflow_tracking:
         metrics = {'Train_AUC': np.mean(valid_results) * 100,
-                   'Valid_AUC': np.mean(train_results)*100}
-        run_experiment(exp_name, 'Random Forest', kwargs, metrics, features)
+                   'Valid_AUC': np.mean(train_results) * 100}
+        unselected_features = set(train_df.columns.tolist()) - set(features)
+
+        run_experiment(exp_name, 'Random Forest', kwargs, metrics, features, list(unselected_features))
 
     return train_results, valid_results, predictions, indexes, models
 
@@ -123,13 +125,18 @@ def make_prediction_rf(train_df: pd.DataFrame, test_df: pd.DataFrame, features: 
 # XGBoost
 ############################
 
-def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target: str, test: pd.DataFrame = None, file: str = 'results',
-            eta: float = 0.03, max_depth: int = 7, subsample: float = 0.7, colsample_bytree: float = 0.7,  # hyperparameters
-            colsample_bylevel: float = 1, lambdax: float = 1, alpha: float = 0, gamma: float = 0, min_child_weight=0,  # hyperparameters
+def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target: str, test: pd.DataFrame = None,
+            file: str = 'results',
+            eta: float = 0.03, max_depth: int = 7, subsample: float = 0.7, colsample_bytree: float = 0.7,
+            # hyperparameters
+            colsample_bylevel: float = 1, lambdax: float = 1, alpha: float = 0, gamma: float = 0, min_child_weight=0,
+            # hyperparameters
             rate_drop: float = 0.2, skip_drop: float = 0.5,  # hyperparameters/DART
             num_boost_round: int = 1000, early_stopping_rounds: int = 50,  # hyperparameters/configuration
-            debug: bool = True, eval_metric: tp.List[str] = ["auc"], objective: str = "binary:logistic", # configuration
-            seed: int = 2022, booster: str = "gbtree", tree_method: str = "exact", grow_policy: str = "depthwise"):  # configuration
+            debug: bool = True, eval_metric: tp.List[str] = ["auc"], objective: str = "binary:logistic",
+            # configuration
+            seed: int = 2022, booster: str = "gbtree", tree_method: str = "exact",
+            grow_policy: str = "depthwise"):  # configuration
     """
     XGB wrapper for gbtree and dart
     https://xgboost.readthedocs.io/en/stable/parameter.html
@@ -214,10 +221,13 @@ def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target:
     # Create a dictionary variable to save the model fit history
     train_result_history = dict()
 
+    # Print evaluated metric every 10 stage if debug true
+    verbose_eval = 10 if debug else False
+
     # Run the training algorithm
     gbm = xgb.train(params, dtrain,
                     num_boost_round, early_stopping_rounds=early_stopping_rounds,
-                    evals=evals, evals_result=train_result_history, verbose_eval=debug)
+                    evals=evals, evals_result=train_result_history, verbose_eval=verbose_eval)
 
     # Calculating statistics and additional values
     score = gbm.best_score
@@ -242,7 +252,7 @@ def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target:
 
     imp_fig = None
     if debug:
-        print(f'Training time: {round((time.time() - start_time)/60, 2)} minutes')
+        print(f'Training time: {round((time.time() - start_time) / 60, 2)} minutes')
         imp_fig, ax = plt.subplots(figsize=(20, 20))
         xgb.plot_importance(gbm, ax=ax, height=0.2)
     return score, train_pred, valid_pred, train_result_history, imp_fig, important_variables
@@ -250,7 +260,6 @@ def run_xgb(train: pd.DataFrame, validate: pd.DataFrame, features: list, target:
 
 def cv_xgb(train_df: pd.DataFrame, target: str, features: list, n_folds: int = 5, random_state: int = 2022,
            debug: bool = False, mlflow_tracking: bool = False, exp_name: str = 'Experiment_XGBoost', *args, **kwargs):
-
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state)
 
     # lists for storing results:
@@ -292,9 +301,10 @@ def cv_xgb(train_df: pd.DataFrame, target: str, features: list, n_folds: int = 5
 
     # Using mlflow for tracking results
     if mlflow_tracking:
-        metrics = {'Valid_AUC': np.mean(test_results)*100,
-                   'Train_AUC': np.mean(train_results)*100}
-        run_experiment(exp_name, 'XGB', kwargs, metrics, features)
+        metrics = {'Valid_AUC': np.mean(test_results) * 100,
+                   'Train_AUC': np.mean(train_results) * 100}
+        unselected_features = set(train_df.columns.tolist()) - set(features)
+        run_experiment(exp_name, 'XGB', kwargs, metrics, features, list(unselected_features))
 
     return train_results, test_results, predictions, indexes, pd.concat(hists, axis=1)
 
@@ -319,17 +329,18 @@ def make_prediction_xgb(train_df: pd.DataFrame, features: list, target: str, tes
     :return: Plotting training and validation score. Saving test forecast target values
     """
 
-    x_train, x_valid = train_test_split(train_df, test_size=valid_size, random_state=None, stratify=train_df[target].values)
+    x_train, x_valid = train_test_split(train_df, test_size=valid_size, random_state=None,
+                                        stratify=train_df[target].values)
     score, preds_train, preds, train_history, imp_fig, imp = run_xgb(x_train, x_valid, features, target, test=test_df,
                                                                      file=file, seed=random_state, *args, **kwargs)
     train_score = roc_auc_score(x_train[target], preds_train)
     test_score = roc_auc_score(x_valid[target], preds)
     print(f'Train score:{train_score}, Valid score: {test_score}')
 
+
 ############################
 # Common tools
 ############################
-
 # Writing results to file
 def save_model_and_results(file_name: str, model_dict: dict) -> None:
     with open(f"output/models/{file_name}.p", "wb") as fp:
