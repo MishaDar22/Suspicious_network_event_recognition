@@ -1,14 +1,13 @@
 import pandas as pd
 import numpy as np
 import typing as tp
-import pickle
 import matplotlib.pyplot as plt
 import time
 import xgboost as xgb
 
 from operator import itemgetter
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_auc_score
 
 from mlflow_tracking import run_experiment
 
@@ -195,19 +194,16 @@ def cv_xgb(train_df: pd.DataFrame, target: str, features: list, n_folds: int = 5
     if mlflow_tracking:
         metrics = {'Valid_AUC': np.mean(test_results) * 100,
                    'Train_AUC': np.mean(train_results) * 100}
-        unselected_features = set(train_df.columns.tolist()) - set(features)
-        run_experiment(exp_name, 'XGB', kwargs, metrics, features, list(unselected_features))
-
+        run_experiment(exp_name, 'XGB', kwargs, metrics, features)
     return train_results, test_results, predictions, indexes, pd.concat(hists, axis=1)
 
 
 # Function to make prediction on training dataset with target
 def make_prediction_xgb(train_df: pd.DataFrame, features: list, target: str, test_df: pd.DataFrame = None,
-                        random_state: int = 2022, file: str = 'pred_target', valid_size: float = 0.2, *args, **kwargs):
+                        random_state: tp.Union[int, None] = None, file: str = 'pred_target', valid_size: float = 0.2, *args, **kwargs):
     """
     Function to make prediction on training dataset with target and on test dataset without a target variable and
     to save test dataset results to file
-
     :param train_df: a training dataset with selected and preprocessed features
     :param features: selected features for training model and making predictions
     :param target: a target variable

@@ -1,53 +1,49 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import typing as tp
 
-from sklearn.model_selection import StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold
+from sklearn import neighbors
 from sklearn.metrics import roc_auc_score
 
 from mlflow_tracking import run_experiment
 
 
-###############################
-# Random Forest
-###############################
+###########################
+# kNN
+###########################
 # Cross-Validation wrapper
-def cv_random_forest(train_df: pd.DataFrame, target: str, features: list, n_folds: int = 5, random_state: int = 2022,
-                     debug: bool = False, save_models=True, mlflow_tracking: bool = False,
-                     exp_name: str = 'some_exp', *args, **kwargs) -> tp.Tuple[list, list, list, list, list]:
+def cv_knn(train_df: pd.DataFrame, target: str, features: list, n_folds: int = 5,
+           random_state: tp.Union[int, None] = None, debug=False, mlflow_tracking: bool = False,
+           exp_name: str = 'knn_exp', *args, **kwargs):
     """
-    Cross-Validation wrapper for imbalanced dataset using Random Forest algorithm for predictions
-
+    KNN Cross-Validation wrapper.
     :param train_df: a training dataset with selected and preprocessed features
     :param target: a target variable
     :param features: selected features for training model and making predictions
     :param n_folds: number of folds. Must be at least 2
     :param random_state: random state
     :param debug: display progress and results of each fold
-    :param save_models: to save model of each fold
+    :param kwargs: parameters for kNN
     :param mlflow_tracking: to use mlflow for tracking parameters and metrics
     :param exp_name: an experiment name in mlflow tracking
-    :param kwargs: parameters for Random Forest
     :return: train_results: score for a training dataset; valid_results: score for a valid dataset;
      predictions for each fold of validation dataset; record indexes for each fold of validation dataset;
      model of each iteration
     """
-
-    # Stratified K-Folds cross-validator for imbalanced dataset
-    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=random_state)
+    # Prepare K-Folds cross-validator
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=random_state)
 
     # lists to store the results
     valid_results = []
     train_results = []
     predictions = []
     indexes = []
-    models = []
 
     # Model validation loop on successive folds
-    for train, test in skf.split(train_df[features], train_df[target]):
+    for train, test in kf.split(train_df.index.values):
         # Estimator preparation
-        clf = RandomForestClassifier(*args, **kwargs, random_state=random_state, n_jobs=-1)
+        clf = neighbors.KNeighborsClassifier(*args, **kwargs)
         if debug:
             print(clf)
         # Training the model
@@ -77,38 +73,9 @@ def cv_random_forest(train_df: pd.DataFrame, target: str, features: list, n_fold
             print("Train AUC:", train_score,
                   "Valid AUC:", test_score)
 
-        # Saving current model
-        if save_models:
-            models.append(clf)
-
     # Using mlflow for tracking results
     if mlflow_tracking:
         metrics = {'Valid_AUC': np.mean(valid_results) * 100,
                    'Train_AUC': np.mean(train_results) * 100}
         run_experiment(exp_name, 'Random Forest', kwargs, metrics, features)
-
-    return train_results, valid_results, predictions, indexes, models
-
-
-# Making prediction for competition using RF
-def make_prediction_rf(train_df: pd.DataFrame, test_df: pd.DataFrame, features: list,
-                       target: str, file: str, random_state: tp.Union[int, None] = None, save=False,
-                       *args, **kwargs) -> np.ndarray:
-    """
-    Function for making prediction for competition using Random Forest
-
-    :param train_df: a training dataset with selected and preprocessed features
-    :param test_df: a test dataset with selected and preprocessed features without target variable
-    :param features: selected features for training model and making predictions
-    :param target: a target variable
-    :param file: file name for saving the forecast results for competition
-    :param random_state: random state
-    :param save: to save results to text file
-    :return: numpy array with the forecast results for competition
-    """
-    clf = RandomForestClassifier(*args, **kwargs, random_state=random_state, n_jobs=-1)
-    clf.fit(train_df[features], train_df[target])
-    preds = clf.predict_proba(test_df[features])[:, 1]
-    if save:
-        np.savetxt(f'output/results/{file}', preds)
-    return preds
+    return train_results, valid_results, predictions, indexes

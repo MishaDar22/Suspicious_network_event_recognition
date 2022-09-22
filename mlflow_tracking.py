@@ -15,13 +15,12 @@ def _eid(name: str) -> tp.Optional[str]:
 
 
 def run_experiment(exp_name: str, algorithm_name: str, params: dict, metrics: dict, features: tp.List[str],
-                   unselected_features: list, template_for_run_name: str = "Top {} features") -> None:
+                   template_for_run_name: str = "Top {} features") -> None:
 
     with mlflow.start_run(experiment_id=_eid(exp_name),
                           run_name=template_for_run_name.format(len(features))):
         tags = dict()
         tags["algorithm"] = algorithm_name
-        tags["unselected_features"] = unselected_features
         mlflow.set_tags(tags)
 
         # TRACK PARAMS
